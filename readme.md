@@ -133,7 +133,8 @@ sudo cp index.html /var/www/html/index.html
 
 Configured with Duck DNS
 
-![alt text](docs/image-1.png)
+<img width="1595" height="239" alt="image" src="https://github.com/user-attachments/assets/faf0d7a5-1325-40ca-9efa-78056f7d61de" />
+
 
 ---
 
