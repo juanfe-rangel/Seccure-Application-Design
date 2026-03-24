@@ -1,0 +1,265 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+    <title>Lab 8</title>
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body {
+            font-family: Arial, sans-serif;
+            background: #f0f4f8;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+        }
+        .card {
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 4px 24px rgba(0,0,0,0.10);
+            padding: 2rem;
+            width: 100%;
+            max-width: 420px;
+        }
+        h1 { color: #34ccd0; margin-bottom: 0.25rem; font-size: 1.4rem; }
+        .subtitle { color: #888; font-size: 0.85rem; margin-bottom: 1.5rem; }
+        label { display: block; font-size: 0.85rem; color: #555; margin-bottom: 0.25rem; }
+        input {
+            width: 100%; padding: 0.6rem 0.8rem;
+            border: 1px solid #ccc; border-radius: 6px;
+            font-size: 0.95rem; margin-bottom: 1rem;
+        }
+        input:focus { outline: none; border-color: #1A56A8; }
+        button {
+            width: 100%; padding: 0.7rem;
+            background: #d5ba3b; color: white;
+            border: none; border-radius: 6px;
+            font-size: 1rem; cursor: pointer;
+        }
+        button:disabled { background: #aaa; cursor: not-allowed; }
+        .msg {
+            margin-top: 1rem; padding: 0.7rem 1rem;
+            border-radius: 6px; font-size: 0.9rem; display: none;
+        }
+        .msg.success { background: #e1f5ee; color: #0F6E56; display: block; }
+        .msg.error   { background: #faece7; color: #993C1D; display: block; }
+        .hidden { display: none; }
+        .data-box {
+            background: #a0e8aa; border-radius: 8px;
+            padding: 1rem; margin-top: 1rem;
+            font-size: 0.82rem; color: #333;
+            white-space: pre-wrap; word-break: break-all;
+        }
+
+        .options { display: flex; gap: 1rem; margin-top: 1rem; }
+        .optionBott { flex: 1; padding: 0.7rem; }
+    </style>
+</head>
+<body>
+<div class="card">
+
+    <!-- Initial Panel -->
+    <div id="initialPanel">
+        <h1>Inicio</h1>
+        <p class="subtitle">Elige una opcion</p>
+        <div class="options">
+            <button class="optionBott" onclick="showSignIn()">Iniciar Sesion</button>
+            <button class="optionBott" onclick="showSignUp()">Registrarse</button>
+        </div>
+    </div>
+
+    <!-- REGISTER -->
+    <div id="registerSection" class="hidden">
+        <h1>Register</h1>
+
+        <label>User</label>
+        <input type="text" class="username" id = "usernameRegister"/>
+
+        <label>Password</label>
+        <input type="password" class="password" id = "passwordRegister"/>
+
+        <button id="regisBtn" onclick="doRegister()">Sign Up</button>
+        <div id="regisMsg" class="msg"></div>
+    </div>
+
+
+    <!-- LOGIN -->
+    <div id="loginSection" class="hidden">
+        <h1>Login</h1>
+
+        <label>User</label>
+        <input type="text" class="username" id = "usernameLogin" />
+
+        <label>Password</label>
+        <input type="password" class="password" id = "passwordLogin" />
+
+        <button id="loginBtn" onclick="doLogin()">Sign In</button>
+        <div id="loginMsg" class="msg"></div>
+    </div>
+
+    <!-- DASHBOARD -->
+    <div id="dashSection" class="hidden">
+        <h1>Dashboard</h1>
+
+        <div class="options">
+            <button onclick="getPi()">Pi</button>
+            <button onclick="getHi()">Saludo</button>
+        </div>
+
+        <div id="dataBox" class="data-box hidden"></div>
+        <div id="dataMsg" class="msg"></div>
+    </div>
+
+</div>
+
+<script>
+
+    function showSignIn(){
+        document.getElementById('initialPanel').classList.add('hidden');
+        document.getElementById('loginSection').classList.remove('hidden');
+    }
+
+    function showSignUp(){
+        document.getElementById('initialPanel').classList.add('hidden');
+        document.getElementById('registerSection').classList.remove('hidden');
+    }
+
+    const SPRING_BASE = 'https://localhost:8443';
+
+    // Credencial
+    let basicHeader = null;
+
+    async function doRegister() {
+        const usuario = document.getElementById('usernameRegister').value.trim();
+        const contra = document.getElementById('passwordRegister').value;
+        console.log(usuario, contra);
+
+        const boton      = document.getElementById('regisBtn');
+        const msg      = document.getElementById('regisMsg');
+
+        const datos = {
+            username: usuario,
+            password: contra
+        };
+
+        if (!usuario || !contra) {
+            showMsg(msg, 'error');
+            return;
+        }
+        boton.disabled = true;
+
+
+        try{
+            const respuesta = await fetch(`${SPRING_BASE}/api/register`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify(datos)
+            });
+            console.log(respuesta);
+            if (!respuesta.ok) throw new Error('Error Usuuario ya existe');
+
+            document.getElementById('registerSection').classList.add('hidden');
+            document.getElementById('dashSection').classList.remove('hidden');
+
+        }catch (err){
+            basicHeader = null;
+            showMsg(msg, err.message, 'error');
+        }finally {
+            boton.disabled = false;
+        }
+    }
+
+
+    async function doLogin() {
+        const usuario = document.getElementById('usernameLogin').value.trim();
+        const contra = document.getElementById('passwordLogin').value;
+        const boton      = document.getElementById('loginBtn');
+        const msg      = document.getElementById('loginMsg');
+
+        if (!usuario || !contra) {
+            showMsg(msg, 'error');
+            return;
+        }
+
+        boton.disabled = true;
+
+        const contraCodificada = btoa(`${usuario}:${contra}`);
+        basicHeader = `Basic ${contraCodificada}`;
+
+        try {
+            const respuesta = await fetch(`${SPRING_BASE}/api/me`, {
+                method: 'GET',
+                headers: { 'Authorization': basicHeader }
+            });
+
+            if (!respuesta.ok) throw new Error('Usuario o contraseña incorrectos');
+
+            document.getElementById('loginSection').classList.add('hidden');
+            document.getElementById('dashSection').classList.remove('hidden');
+
+        } catch (err) {
+            basicHeader = null;
+            showMsg(msg, err.message, 'error');
+        } finally {
+            boton.disabled = false;
+        }
+    }
+
+    async function getHi() {
+        const box = document.getElementById('dataBox');
+        const msg = document.getElementById('dataMsg');
+        box.classList.add('hidden');
+        msg.className = 'msg';
+
+        try{
+            const res = await fetch(`${SPRING_BASE}/`, {
+                method: 'GET',
+                headers: { 'Authorization': basicHeader }
+            });
+            if (!res.ok) throw new Error('Error  ' + res.status);
+
+            const data = await res.text();
+            box.textContent = data;
+            box.classList.remove('hidden');
+        }catch (err){
+            showMsg(msg, err.message, 'error');
+        }
+    }
+
+    async function getPi() {
+        const box = document.getElementById('dataBox');
+        const msg = document.getElementById('dataMsg');
+        box.classList.add('hidden');
+        msg.className = 'msg';
+
+        try{
+            const res = await fetch(`${SPRING_BASE}/pi`, {
+                method: 'GET',
+                headers: { 'Authorization': basicHeader }
+            });
+            if (!res.ok) throw new Error('Error  ' + res.status);
+
+            const data = await res.text();
+            box.textContent = data;
+            box.classList.remove('hidden');
+        }catch (err){
+            showMsg(msg, err.message, 'error');
+        }
+    }
+
+    function showMsg(el, text, type) {
+        el.textContent = text;
+        el.className = `msg ${type}`;
+    }
+
+    document.addEventListener('keydown', e => {
+        if (e.key === 'Enter' && !document.getElementById('loginSection').classList.contains('hidden')) {
+            doLogin();
+        }
+    });
+</script>
+</body>
+</html>

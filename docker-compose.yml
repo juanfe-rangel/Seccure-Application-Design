@@ -1,0 +1,8 @@
+services:
+  web:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: secureSpring
+    ports:
+      - "8443:8443"
